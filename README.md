@@ -1,2 +1,2 @@
-# gba-emulator
+# gb-emulator
  
