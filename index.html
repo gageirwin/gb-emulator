@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GB Emulator</title>
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+
+<body>
+    <button type="button" id="start-emulation">Start</button>
+    <button type="button" id="pause-emulation">Pause</button>
+    <button type="button" id="step-emulation">Step</button>
+
+    <canvas id="screen" width="160" height="144"></canvas>
+
+
+    <div>CPU Debugger</div>
+
+    <table>
+        <tr>
+            <th>Register</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>A</td>
+            <td id="reg-A"></td>
+        </tr>
+        <tr>
+            <td>B</td>
+            <td id="reg-B"></td>
+        </tr>
+        <tr>
+            <td>C</td>
+            <td id="reg-C"></td>
+        </tr>
+        <tr>
+            <td>D</td>
+            <td id="reg-D"></td>
+        </tr>
+        <tr>
+            <td>E</td>
+            <td id="reg-E"></td>
+        </tr>
+        <tr>
+            <td>H</td>
+            <td id="reg-H"></td>
+        </tr>
+        <tr>
+            <td>L</td>
+            <td id="reg-L"></td>
+        </tr>
+        <tr>
+            <td>F</td>
+            <td id="reg-F"></td>
+        </tr>
+        <tr>
+            <td>SP</td>
+            <td id="reg-SP"></td>
+        </tr>
+        <tr>
+            <td>PC</td>
+            <td id="reg-PC"></td>
+        </tr>
+    </table>
+
+    <script src="js/cpu.js"></script>
+    <script src="js/gb.js"></script>
+    <script src="js/index.js"></script>
+</body>
+
+</html>
