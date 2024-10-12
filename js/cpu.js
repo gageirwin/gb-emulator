@@ -12,28 +12,31 @@ class CPU {
         this.H = 0
         this.L = 0
         this.F = {
-            zero: false,
-            subtract: false,
-            halfCarry: false,
-            carry: false
+            zero: 0,
+            subtract: 0,
+            halfCarry: 0,
+            carry: 0
         }
         this.SP = 0
         this.PC = 0
+
+        this.memory = []
+        this.cycles
     }
 
     step() {
-
-        this.A = Math.floor(Math.random() * 100)
-        this.PC++
-
         if (this.debugging)
             this.debugger()
     }
 
-    execute(opcode = "0x00") {
-        if (opcode === "0xCB")
+    execute(opcode) {
+        const top = (opcode >> 8)
+        const bottom = opcode & 0xFF
+        if (top === 0xCB) {
             return
-        this[`_${opcode}`]()
+        }
+        const topHex = top.toString(16).toUpperCase().padStart(2, 0)
+        this[`_0x${topHex}`](bottom)
     }
 
     debugger() {
@@ -48,28 +51,136 @@ class CPU {
                 L: this.L,
                 F: this.F,
                 SP: this.SP,
-                PC: this.PC
+                PC: this.PC,
+                AF: this._AF(),
+                BC: this._BC(),
+                DE: this._DE(),
+                HL: this._HL()
             }
         })
         document.dispatchEvent(event)
     }
 
-    //https://gbdev.io/gb-opcodes/optables/
+    /**
+     * Gets or sets the value of the AF register.
+     * If data is provided, the function updates the A and F registers.
+     * If data is not provided, it returns the combined AF register value.
+     *
+     * @param {number} [data] - The value to set for the AF register (optional).
+     * @returns {number|void} - Returns the combined AF register value if no data is provided, 
+     *                          otherwise, it updates the registers and returns nothing.
+     */
+    _AF(data) {
+        if (data == undefined) {
+            const F = `${this.F.zero}${this.F.subtract}${this.F.halfCarry}${this.F.carry}0000`
+            return (this.A << 8) | (parseInt(F, 2) & 0xFF)
+        }
+        this.A = (data >> 8) & 0xFF
+        this.F.zero = (data >> 7) & 0x01
+        this.F.subtract = (data >> 6) & 0x01
+        this.F.halfCarry = (data >> 5) & 0x01
+        this.F.carry = (data >> 4) & 0x01
+    }
+
+    /**
+     * Gets or sets the value of the BC register.
+     * If data is provided, the function updates the B and C registers.
+     * If data is not provided, it returns the combined BC register value.
+     *
+     * @param {number} [data] - The value to set for the BC register (optional).
+     * @returns {number|void} - Returns the combined BC register value if no data is provided, 
+     *                          otherwise, it updates the registers and returns nothing.
+     */
+    _BC(data) {
+        if (data == undefined)
+            return (this.B << 8) | this.C
+        this.B = (data >> 8) & 0xFF
+        this.C = data & 0xFF
+    }
+
+    /**
+     * Gets or sets the value of the DE register.
+     * If data is provided, the function updates the D and E registers.
+     * If data is not provided, it returns the combined DE register value.
+     *
+     * @param {number} [data] - The value to set for the DE register (optional).
+     * @returns {number|void} - Returns the combined DE register value if no data is provided, 
+     *                          otherwise, it updates the registers and returns nothing.
+     */
+    _DE(data) {
+        if (data == undefined)
+            return (this.D << 8) | this.E
+        this.D = (data >> 8) & 0xFF
+        this.E = data & 0xFF
+    }
+
+    /**
+     * Gets or sets the value of the HL register.
+     * If data is provided, the function updates the H and L registers.
+     * If data is not provided, it returns the combined HL register value.
+     *
+     * @param {number} [data] - The value to set for the HL register (optional).
+     * @returns {number|void} - Returns the combined HL register value if no data is provided, 
+     *                          otherwise, it updates the registers and returns nothing.
+     */
+    _HL(data) {
+        if (data == undefined)
+            return (this.H << 8) | this.L
+        this.H = (data >> 8) & 0xFF
+        this.L = data & 0xFF
+    }
+
+    /*
+        https://gbdev.io/gb-opcodes/optables/
+        https://meganesu.github.io/generate-gb-opcodes/
+    */
 
     //NOP
     _0x00() { }
     //LD BC, n16
-    _0x01() { }
+    _0x01(data) {
+        this.B = (data >> 8) & 0xFF
+        this.C = data & 0xFF
+        this.PC += 3
+        this.PC &= 0xFFFF
+    }
     //LD [BC], A
-    _0x02() { }
+    _0x02() {
+        const BC = (this.B << 8) | this.C
+        this.memory[BC] = this.A
+        this.PC += 1
+        this.PC &= 0xFFFF
+    }
     //INC BC
-    _0x03() { }
+    _0x03() {
+        let BC = this._BC()
+        BC = (BC + 1) & 0xFFFF
+        this._BC(BC)
+        this.PC += 1
+        this.PC &= 0xFFFF
+    }
     //INC B
-    _0x04() { }
+    _0x04() {
+        const temp = this.B + 1
+        this.F.zero = (temp & 0xFF) === 0 ? 1 : 0
+        this.F.subtract = 0
+        this.F.halfCarry = (this.B & 0x0F) === 0x0F ? 1 : 0
+        this.B = temp & 0xFF
+        this.PC += 1
+        this.PC &= 0xFFFF
+    }
     //DEC B
-    _0x05() { }
+    _0x05() {
+        const temp = this.B - 1
+        this.F.zero = (temp & 0xFF) === 0 ? 1 : 0
+        this.F.subtract = 1
+        this.F.halfCarry = (this.B & 0x0F) === 0 && (temp & 0x0F) === 0x0F ? 1 : 0
+        this.B = temp & 0xFF
+        this.PC += 1
+        this.PC &= 0xFFFF
+    }
     //LD B, n8
-    _0x06() { }
+    _0x06(data) { }
     //RLCA
     _0x07() { }
     //LD [a16], SP
