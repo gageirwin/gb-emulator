@@ -66,7 +66,3 @@ function hexToInt(hexString) {
 // Testing
 const cpu = new CPU(true)
 
-cpu._AF(from16BitBinary("0000000110100000"))
-cpu.debugger()
-cpu.execute(hexToInt("0xFF"))
-cpu._AF
